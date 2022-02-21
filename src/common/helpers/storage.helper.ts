@@ -14,3 +14,9 @@ export async function deleteFile(path: string) {
 
   return deleted(path);
 }
+
+export async function getFile(path: string, encoding: string) {
+  const readFile = promisify(fs.readFile);
+
+  return encoding ? readFile(path, 'utf8') : readFile(path, {});
+}
