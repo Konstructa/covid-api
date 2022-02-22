@@ -10,8 +10,8 @@ export class AppController {
     return this.appService.getUsaAndBrazil();
   }
 
-  @Get('china-russia')
+  @Get('/china-russia')
   getChinaAndRussia() {
-    return this.appService.getUsaAndBrazil();
+    return this.appService.getChinaAndRussia();
   }
 }
