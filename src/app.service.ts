@@ -26,12 +26,12 @@ export class AppService {
       const json2csvParser = new Parser();
       const csv = json2csvParser.parse(data);
       this.exportCSVfile(csv);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.log(error);
     }
   }
 
-  async exportCSVfile(csv: string) {
+  exportCSVfile(csv: string) {
     try {
       const filePath = __dirname + `/../src/archive`;
       const fileName = `country-${new Date().toISOString()}.csv`;
