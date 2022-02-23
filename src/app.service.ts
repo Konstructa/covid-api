@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom, map } from 'rxjs';
 import { Resultado } from './interface/result.interface';
-import { parse } from 'json2csv';
+import { Parser } from 'json2csv';
+import {
+  getFile,
+  createFile,
+  deleteFile,
+} from './common/helpers/storage.helper';
 
 @Injectable()
 export class AppService {
@@ -16,8 +21,26 @@ export class AppService {
     return this.getData('china,russia');
   }
 
-  parseData() {}
+  async parseData(data: any) {
+    try {
+      const json2csvParser = new Parser();
+      const csv = json2csvParser.parse(data);
+      this.exportCSVfile(csv);
+    } catch (err) {
+      console.error(err);
+    }
+  }
 
+  async exportCSVfile(csv: string) {
+    try {
+      const filePath = __dirname + `/../src/archive`;
+      const fileName = `country-${new Date().toISOString()}.csv`;
+      console.log(csv);
+      return createFile(filePath, fileName, csv);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   async getData(c: string) {
     const result: Resultado[] = [];
@@ -43,6 +66,6 @@ export class AppService {
       result.push(observable);
     }
 
-    return result;
+    this.parseData(result);
   }
 }
