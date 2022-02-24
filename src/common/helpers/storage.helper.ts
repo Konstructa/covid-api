@@ -17,18 +17,18 @@ export function createFile(path: string, fileName: string, data: string) {
 
 export function deleteFile(path: string) {
   try {
-    const deleted = promisify(fs.unlink);
+    const unlink = promisify(fs.unlink);
 
-    return deleted(path);
+    return unlink(path);
   } catch (error) {
     console.log(error);
   }
 }
 
-export function getFile(path: string, encoding: string) {
+export function getFile(path: string) {
   const readFile = promisify(fs.readFile);
 
-  return encoding ? readFile(path, 'utf8') : readFile(path, {});
+  return readFile(path, 'utf8');
 }
 
 export function checkIfDirectoryExists(path: string) {
