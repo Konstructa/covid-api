@@ -28,7 +28,7 @@ export function deleteFile(path: string) {
 export function getFile(path: string) {
   const readFile = promisify(fs.readFile);
 
-  return readFile(path, 'utf8');
+  return readFile(path, 'utf-8');
 }
 
 export function checkIfDirectoryExists(path: string) {
