@@ -9,24 +9,37 @@ import {
   deleteFile,
 } from './common/helpers/storage.helper';
 import * as FormData from 'form-data';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppService {
-  constructor(private httpService: HttpService) {}
+  constructor(
+    private httpService: HttpService,
+    private configService: ConfigService,
+  ) {}
 
-  getUsaAndBrazil() {
-    return this.getData('usa,brazil');
+  async getUsaAndBrazil() {
+    this.processBeginUntilEnd('FOLDER_ID_USA_BRA', 'usa,brazil');
   }
 
-  getChinaAndRussia() {
-    return this.getData('china,russia');
+  async getChinaAndRussia() {
+    this.processBeginUntilEnd('FOLDER_ID_CHINA_RUSSIA', 'china,russia');
+  }
+
+  async processBeginUntilEnd(folderIdConfig: string, countries: string) {
+    const folderId = this.configService.get(folderIdConfig);
+    const result = await this.getData(countries);
+    const csv = await this.parseData(result);
+    const [filePath, fileName] = await this.exportCSVfile(csv);
+    await this.sendFormData(`${filePath}/${fileName}`, fileName, folderId);
+    this.deleteLocalFile(`${filePath}/${fileName}`);
   }
 
   async parseData(data: any) {
     try {
       const json2csvParser = new Parser();
       const csv = json2csvParser.parse(data);
-      this.exportCSVfile(csv);
+      return csv;
     } catch (error) {
       console.log(error);
     }
@@ -34,10 +47,10 @@ export class AppService {
 
   async exportCSVfile(csv: string) {
     const filePath = __dirname + `/../src/archive`;
-    const fileName = `country-${new Date().toISOString()}.csv`;
+    const fileName = `covid-${new Date().toISOString()}.csv`;
     try {
       await createFile(filePath, fileName, csv);
-      return this.sendFormData(`${filePath}/${fileName}`);
+      return [filePath, fileName];
     } catch (error) {
       console.log(error);
     }
@@ -67,7 +80,7 @@ export class AppService {
       result.push(observable);
     }
 
-    this.parseData(result);
+    return result;
   }
 
   async getBestServer() {
@@ -85,35 +98,33 @@ export class AppService {
     }
   }
 
-  async sendFormData(path: string) {
+  async sendFormData(path: string, fileName: string, folderId: string) {
+    const token = this.configService.get('API_TOKEN');
     const urlServer = await this.getBestServer();
     try {
       const file = await getFile(path);
 
       const form = new FormData();
-      form.append('file', file, 'teste2.csv');
-      form.append('token', '8LsjfkT4OIGWwDq18VtzCOvknAChoG77');
-      form.append('folderId', '37728105-9830-4616-a45f-6facf1ce5518');
+      form.append('file', file, fileName);
+      form.append('token', token);
+      form.append('folderId', folderId);
       const headers = {
         ...form.getHeaders(),
       };
 
-      setTimeout(async () => {
-        try {
-          console.log(file);
-          const teste = this.httpService
-            .post(urlServer, form, {
-              headers,
-            })
-            .pipe(map((res) => res.data));
-          const observable = await lastValueFrom(teste);
-          console.log(observable);
-        } catch (error) {
-          console.log(error);
-        }
-      }, 1);
+      const teste = this.httpService
+        .post(urlServer, form, {
+          headers,
+        })
+        .pipe(map((res) => res.data));
+      const observable = await lastValueFrom(teste);
+      console.log(observable);
     } catch (error) {
       console.log(error);
     }
+  }
+
+  deleteLocalFile(path: string) {
+    deleteFile(path);
   }
 }
